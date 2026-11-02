@@ -1,0 +1,10 @@
+<?php require_once __DIR__.'/config/auth.php'; require_login();
+$role=$_SESSION['user']['role'];
+$counts=[];
+foreach (['vehicles'=>'Vehicles','drivers'=>'Drivers','violations'=>'Violations','fines'=>'Fines','payments'=>'Payments'] as $table=>$label) { try { $counts[$label]=(int)$pdo->query("SELECT COUNT(*) FROM `$table`")->fetchColumn(); } catch(Throwable $e) {$counts[$label]=0;} }
+$recent=$pdo->query('SELECT v.id,v.violation_type,v.location,v.violation_date,d.full_name FROM violations v LEFT JOIN drivers d ON d.id=v.driver_id ORDER BY v.id DESC LIMIT 8')->fetchAll();
+$pageTitle='Dashboard'; require __DIR__.'/pages/_header.php'; ?>
+<section class="welcome"><div><span class="eyebrow">TRAFFICPRO CONTROL CENTER</span><h1>Good day, <?=e($_SESSION['user']['full_name'])?></h1><p>Manage traffic records, violations, fines and payment updates in one place.</p></div><span class="role-badge"><?=e(ucfirst($role))?></span></section>
+<div class="stats"><?php foreach($counts as $label=>$num): ?><article class="stat"><span><?=e($label)?></span><strong><?=number_format($num)?></strong><small>Records in system</small></article><?php endforeach; ?></div>
+<div class="panel"><div class="panel-heading"><div><h2>Recent violations</h2><p>Latest recorded traffic incidents</p></div><?php if($role==='officer'): ?><a class="button" href="pages/violations.php">Manage violations</a><?php endif; ?></div><div class="table-wrap"><table><thead><tr><th>Type</th><th>Driver</th><th>Location</th><th>Date</th></tr></thead><tbody><?php foreach($recent as $r): ?><tr><td><?=e($r['violation_type'])?></td><td><?=e($r['full_name']??'Not linked')?></td><td><?=e($r['location'])?></td><td><?=e($r['violation_date'])?></td></tr><?php endforeach; ?><?php if(!$recent): ?><tr><td colspan="4" class="empty">No violations recorded yet.</td></tr><?php endif; ?></tbody></table></div></div>
+<?php require __DIR__.'/pages/_footer.php'; ?>
